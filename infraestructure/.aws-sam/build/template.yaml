@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "ScannMyTicket | Backend Serverless (m\xEDnimo)"
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 10
+    MemorySize: 256
+    Architectures:
+    - x86_64
+    Environment:
+      Variables:
+        TABLE_NAME: TicketAppTable
+Resources:
+  TicketAppTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: TicketAppTable
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: pk
+        AttributeType: S
+      - AttributeName: sk
+        AttributeType: S
+      - AttributeName: entityType
+        AttributeType: S
+      KeySchema:
+      - AttributeName: pk
+        KeyType: HASH
+      - AttributeName: sk
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: EntityTypeIndex
+        KeySchema:
+        - AttributeName: entityType
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+  ServerlessHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+        - '*'
+        AllowMethods:
+        - GET
+        - POST
+        - OPTIONS
+        AllowHeaders:
+        - '*'
+  LoginUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: LoginUserFunction
+      Handler: auth.login_user.app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiLogin:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /login
+            Method: POST
+    Metadata:
+      SamResourceId: LoginUserFunction
+  EventsCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: EventsCreateFunction
+      Handler: events.events_create.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiEventsCreate:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /events
+            Method: POST
+    Metadata:
+      SamResourceId: EventsCreateFunction
+  EventsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: EventsListFunction
+      Handler: events.events_list.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiEventsList:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /events
+            Method: GET
+    Metadata:
+      SamResourceId: EventsListFunction
+  TicketsSubscribeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: TicketsSubscribeFunction
+      Handler: tickets.tickets_subscribe.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiTicketsSubscribe:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /tickets/subscribe
+            Method: POST
+    Metadata:
+      SamResourceId: TicketsSubscribeFunction
+  TicketsMineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: TicketsMineFunction
+      Handler: tickets.tickets_mine.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiTicketsMine:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /tickets/mine
+            Method: GET
+    Metadata:
+      SamResourceId: TicketsMineFunction
+Outputs:
+  TicketAppTableName:
+    Description: Nombre de la tabla principal
+    Value:
+      Ref: TicketAppTable
+  HttpApiUrl:
+    Description: URL base del API HTTP creado por SAM
+    Value:
+      Fn::Sub: https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com
