@@ -1,43 +1,39 @@
 // src/components/TicketCard.tsx
-import type { ApiTicket } from "../api/client";
 
-type Props = {
-    ticket: ApiTicket;
-};
+export interface UiTicket {
+  id: string;
+  eventTitle: string;
+  status: "active" | "used" | "expired";
+  usedAt?: string;
+}
 
-const fallbackImage = "https://picsum.photos/400/240?blur=2";
+interface Props {
+  ticket: UiTicket;
+}
 
-const safeImg = (src?: string | null) => {
-    if (!src) return fallbackImage;
-    if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
-        return src;
-    }
-    return fallbackImage;
-};
+export default function TicketCard({ ticket }: Props) {
+  const statusLabel: Record<UiTicket["status"], string> = {
+    active: "Activo",
+    used: "Usado",
+    expired: "Expirado",
+  };
 
-const fmt = (v?: string | null) =>
-    v ? new Date(v).toLocaleString() : "—";
+  return (
+    <article className="card ticket-card">
+      <div className="ticket-header">
+        <h3 className="card-title">{ticket.eventTitle}</h3>
+        <span className={`ticket-pill ticket-pill-${ticket.status}`}>
+          {statusLabel[ticket.status]}
+        </span>
+      </div>
 
-const TicketCard: React.FC<Props> = ({ ticket }) => {
-    return (
-        <div className="border rounded shadow p-3 flex flex-col bg-white">
-            <h2 className="font-bold text-lg mb-2">{ticket.title}</h2>
-            <img
-                src={safeImg(ticket.image_url)}
-                alt={ticket.title}
-                className="w-full h-40 object-cover rounded mb-2"
-            />
-            <p className="text-sm text-gray-600 mb-1">
-                Inicio: <span className="font-semibold">{fmt(ticket.start)}</span>
-            </p>
-            <p className="text-sm text-gray-600 mb-2">
-                Fin: <span className="font-semibold">{fmt(ticket.end)}</span>
-            </p>
-            <p className="text-xs font-mono text-gray-500">
-                Estado: <span className="font-semibold">{ticket.status ?? "desconocido"}</span>
-            </p>
-        </div>
-    );
-};
+      {ticket.usedAt && (
+        <p className="ticket-subinfo">Usado el {ticket.usedAt}</p>
+      )}
 
-export default TicketCard;
+      <p className="ticket-hint">
+        Escanea tu QR en el acceso del evento para validar este ticket.
+      </p>
+    </article>
+  );
+}

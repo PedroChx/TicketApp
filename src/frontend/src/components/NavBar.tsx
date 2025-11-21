@@ -1,47 +1,66 @@
 // src/components/NavBar.tsx
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function NavBar() {
-    const { user, logout } = useAuth();
+export default function NavBar() {
+    const { isAuthenticated, user, logout } = useAuth();
 
     return (
-        <nav className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white">
-            <div className="font-bold text-xl">
-                ScannMyTicket
-            </div>
-
-            <div className="flex gap-4 items-center">
-                <Link to="/" className="hover:underline">
-                    Eventos
+        <header className="nav">
+            <div className="nav-inner">
+                <Link to="/" className="nav-brand">
+                    <span className="nav-logo-circle">🎫</span>
+                    <span className="nav-title">
+                        Ticket<span>App</span>
+                    </span>
                 </Link>
 
-                {user && (
-                    <>
-                        <Link to="/tickets" className="hover:underline">
-                            Mis tickets
-                        </Link>
-                        <span className="text-sm opacity-80">{user.email}</span>
-                        <button
-                            onClick={logout}
-                            className="px-3 py-1 rounded bg-red-600 hover:bg-red-500 text-sm"
-                        >
-                            Cerrar sesión
-                        </button>
-                    </>
-                )}
-
-                {!user && (
-                    <Link
-                        to="/login"
-                        className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-sm"
+                <nav className="nav-links">
+                    <NavLink
+                        to="/"
+                        className={({ isActive }) =>
+                            isActive ? "nav-link nav-link-active" : "nav-link"
+                        }
                     >
-                        Iniciar sesión
-                    </Link>
-                )}
+                        Eventos
+                    </NavLink>
+
+                    {isAuthenticated && (
+                        <NavLink
+                            to="/my-tickets"
+                            className={({ isActive }) =>
+                                isActive ? "nav-link nav-link-active" : "nav-link"
+                            }
+                        >
+                            Mis tickets
+                        </NavLink>
+                    )}
+                </nav>
+
+                <div className="nav-right">
+                    {isAuthenticated && user ? (
+                        <>
+                            <div className="nav-user">
+                                <span className="nav-avatar">
+                                    {user.name?.[0]?.toUpperCase() ??
+                                        user.email[0]?.toUpperCase()}
+                                </span>
+                                <span className="nav-user-info">
+                                    <span className="nav-user-name">{user.name ?? "Usuario"}</span>
+                                    <span className="nav-user-email">{user.email}</span>
+                                </span>
+                            </div>
+                            <button className="btn-secondary" onClick={logout}>
+                                Cerrar sesión
+                            </button>
+                        </>
+                    ) : (
+                        <Link to="/login" className="btn-primary">
+                            Iniciar sesión
+                        </Link>
+                    )}
+                </div>
             </div>
-        </nav>
+        </header>
     );
 }
-
-export default NavBar;

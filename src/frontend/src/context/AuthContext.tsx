@@ -1,66 +1,61 @@
-// frontend/src/context/AuthContext.tsx
-import {
+// src/context/AuthContext.tsx
+import React, {
     createContext,
     useContext,
     useState,
     useEffect,
     type ReactNode,
 } from "react";
-import { loginUser, type ApiUser } from "../api/client";
+import type { ApiUser } from "../api/client";
 
-type AuthContextValue = {
+interface AuthState {
     user: ApiUser | null;
-    loading: boolean;
-    login: (email: string, password: string) => Promise<void>;
+    token: string | null;
+    isAuthenticated: boolean;
+    login: (user: ApiUser, token: string) => void;
     logout: () => void;
-};
+}
 
-const AuthContext = createContext<AuthContextValue | undefined>(
-    undefined
-);
-
-const STORAGE_KEY = "ticketapp_user";
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<ApiUser | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
 
-    // Cargar usuario guardado en localStorage
     useEffect(() => {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                setUser(JSON.parse(raw));
-            }
-        } catch {
-            // ignore
-        } finally {
-            setLoading(false);
+        const savedToken = localStorage.getItem("ticketapp_token");
+        const savedUser = localStorage.getItem("ticketapp_user");
+        if (savedToken && savedUser) {
+            setToken(savedToken);
+            setUser(JSON.parse(savedUser));
         }
     }, []);
 
-    const login = async (email: string, password: string) => {
-        const loggedUser = await loginUser(email, password);
-        setUser(loggedUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
+    const login = (u: ApiUser, t: string) => {
+        setUser(u);
+        setToken(t);
+        localStorage.setItem("ticketapp_token", t);
+        localStorage.setItem("ticketapp_user", JSON.stringify(u));
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem(STORAGE_KEY);
+        setToken(null);
+        localStorage.removeItem("ticketapp_token");
+        localStorage.removeItem("ticketapp_user");
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider
+            value={{ user, token, isAuthenticated: !!token, login, logout }}
+        >
             {children}
         </AuthContext.Provider>
     );
 }
 
-export function useAuth(): AuthContextValue {
+export function useAuth() {
     const ctx = useContext(AuthContext);
-    if (!ctx) {
-        throw new Error("useAuth debe usarse dentro de AuthProvider");
-    }
+    if (!ctx) throw new Error("useAuth debe usarse dentro de <AuthProvider>");
     return ctx;
 }
