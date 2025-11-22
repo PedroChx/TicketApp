@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: ScannMyTicket | Backend Serverless (mínimo)
+Description: ScannMyTicket | Backend Serverless (mínimo viable)
 
 Globals:
   Function:
@@ -14,9 +14,7 @@ Globals:
         TABLE_NAME: TicketAppTable
 
 Resources:
-  # ==========================
-  # Tabla principal DynamoDB
-  # ==========================
+  # ========= DynamoDB =========
   TicketAppTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -39,35 +37,30 @@ Resources:
           KeySchema:
             - AttributeName: entityType
               KeyType: HASH
-            - AttributeName: sk
-              KeyType: RANGE
           Projection:
             ProjectionType: ALL
 
-  # ==========================
-  # API HTTP
-  # ==========================
+  # ========= HTTP API =========
   ServerlessHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
+      StageName: Prod
       CorsConfiguration:
         AllowOrigins:
-          - '*'
+          - "http://localhost:5173"
+        AllowHeaders:
+          - "*"
         AllowMethods:
           - GET
           - POST
           - OPTIONS
-        AllowHeaders:
-          - '*'
 
-  # ==========================
-  # Login (auth/login_user)
-  # ==========================
+  # ========= AUTH =========
   LoginUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda
-      Handler: auth.login_user.app.lambda_handler
+      CodeUri: ../src/lambda/auth/login_user
+      Handler: app.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -79,14 +72,28 @@ Resources:
             Path: /login
             Method: POST
 
-  # ==========================
-  # Eventos
-  # ==========================
+  RegisterUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../src/lambda/auth/register_user
+      Handler: app.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TicketAppTable
+      Events:
+        ApiRegister:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ServerlessHttpApi
+            Path: /register
+            Method: POST
+
+  # ========= EVENTS =========
   EventsCreateFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda
-      Handler: events.events_create.lambda_handler
+      CodeUri: ../src/lambda/events
+      Handler: events_create.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -101,8 +108,8 @@ Resources:
   EventsListFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda
-      Handler: events.events_list.lambda_handler
+      CodeUri: ../src/lambda/events
+      Handler: events_list.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -114,14 +121,12 @@ Resources:
             Path: /events
             Method: GET
 
-  # ==========================
-  # Tickets
-  # ==========================
+  # ========= TICKETS =========
   TicketsSubscribeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda
-      Handler: tickets.tickets_subscribe.lambda_handler
+      CodeUri: ../src/lambda/tickets
+      Handler: tickets_subscribe.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -136,8 +141,8 @@ Resources:
   TicketsMineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda
-      Handler: tickets.tickets_mine.lambda_handler
+      CodeUri: ../src/lambda/tickets
+      Handler: tickets_mine.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -156,4 +161,4 @@ Outputs:
 
   HttpApiUrl:
     Description: URL base del API HTTP creado por SAM
-    Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

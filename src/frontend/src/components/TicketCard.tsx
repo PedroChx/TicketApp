@@ -1,39 +1,33 @@
-// src/components/TicketCard.tsx
-
-export interface UiTicket {
-  id: string;
-  eventTitle: string;
-  status: "active" | "used" | "expired";
-  usedAt?: string;
-}
+import "./TicketCard.css";
+import type { ApiTicket } from "../api/client";
+import { QRCodeCanvas } from "qrcode.react";
 
 interface Props {
-  ticket: UiTicket;
+  ticket: ApiTicket;
 }
 
-export default function TicketCard({ ticket }: Props) {
-  const statusLabel: Record<UiTicket["status"], string> = {
-    active: "Activo",
-    used: "Usado",
-    expired: "Expirado",
-  };
+function TicketCard({ ticket }: Props) {
+  const label = `TICKET-${ticket.ticketId}`;
 
   return (
-    <article className="card ticket-card">
-      <div className="ticket-header">
-        <h3 className="card-title">{ticket.eventTitle}</h3>
-        <span className={`ticket-pill ticket-pill-${ticket.status}`}>
-          {statusLabel[ticket.status]}
-        </span>
+    <article className="ticket-card">
+      <div className="ticket-card-left">
+        <h3>{ticket.eventTitle}</h3>
+        <p className="ticket-id">{label}</p>
+        <p className="ticket-status">
+          Estado: {ticket.used ? "Usado" : "Disponible"}
+        </p>
+        {ticket.createdAt && (
+          <p className="ticket-date">
+            Generado: {new Date(ticket.createdAt).toLocaleString()}
+          </p>
+        )}
       </div>
-
-      {ticket.usedAt && (
-        <p className="ticket-subinfo">Usado el {ticket.usedAt}</p>
-      )}
-
-      <p className="ticket-hint">
-        Escanea tu QR en el acceso del evento para validar este ticket.
-      </p>
+      <div className="ticket-card-right">
+        <QRCodeCanvas value={label} size={96} includeMargin />
+      </div>
     </article>
   );
 }
+
+export default TicketCard;

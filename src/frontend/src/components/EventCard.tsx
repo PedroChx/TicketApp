@@ -1,63 +1,62 @@
-// src/components/EventCard.tsx
+import "./EventCard.css";
 import type { ApiEvent } from "../api/client";
+import { Link } from "react-router-dom";
 
 interface Props {
   event: ApiEvent;
-  onPrimaryAction?: (event: ApiEvent) => void;
+  onSubscribe?: (eventId: string) => void;
 }
 
-export default function EventCard({ event, onPrimaryAction }: Props) {
-  const start = event.start
-    ? new Date(event.start).toLocaleString()
-    : "Fecha por definir";
-
-  const end = event.end ? new Date(event.end).toLocaleString() : "";
+function EventCard({ event, onSubscribe }: Props) {
+  const handleSubscribe = () => {
+    if (onSubscribe) onSubscribe(event.eventId);
+  };
 
   return (
-    <article className="card event-card">
-      <div className="card-image-wrapper">
-        <img
-          src={event.image_url || "https://picsum.photos/600/320?blur=2"}
-          alt={event.title}
-          className="card-image"
-        />
-        <div className="card-badge">Evento</div>
+    <article className="event-card">
+      <div className="event-card-image-wrapper">
+        {event.image_url ? (
+          <img
+            src={event.image_url}
+            alt={event.title}
+            className="event-card-image"
+          />
+        ) : (
+          <div className="event-card-image placeholder">
+            {event.title.substring(0, 2).toUpperCase()}
+          </div>
+        )}
       </div>
 
-      <div className="card-body">
-        <h3 className="card-title">{event.title}</h3>
-        {event.description && (
-          <p className="card-description">{event.description}</p>
+      <div className="event-card-body">
+        <h3>{event.title}</h3>
+        {event.location && (
+          <p className="event-card-location">{event.location}</p>
         )}
-
-        <div className="card-meta">
-          <div>
-            <span className="card-meta-label">Inicio</span>
-            <span className="card-meta-value">{start}</span>
-          </div>
-          {end && (
-            <div>
-              <span className="card-meta-label">Fin</span>
-              <span className="card-meta-value">{end}</span>
-            </div>
+        <div className="event-card-dates">
+          {event.start && (
+            <span>Inicio: {new Date(event.start).toLocaleString()}</span>
           )}
-          {event.location && (
-            <div>
-              <span className="card-meta-label">Lugar</span>
-              <span className="card-meta-value">{event.location}</span>
-            </div>
+          {event.end && (
+            <span> · Fin: {new Date(event.end).toLocaleString()}</span>
           )}
         </div>
 
-        <div className="card-actions">
-          <button
-            className="btn-primary btn-full"
-            onClick={() => onPrimaryAction?.(event)}
-          >
-            Ver detalles / Obtener ticket
+        {event.description && (
+          <p className="event-card-description">{event.description}</p>
+        )}
+
+        <div className="event-card-actions">
+          <Link to={`/events/${event.eventId}`} className="btn-secondary">
+            Detalles
+          </Link>
+          <button className="btn-primary" onClick={handleSubscribe}>
+            Obtener ticket
           </button>
         </div>
       </div>
     </article>
   );
 }
+
+export default EventCard;

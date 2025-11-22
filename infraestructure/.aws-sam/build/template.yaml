@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: "ScannMyTicket | Backend Serverless (m\xEDnimo)"
+Description: "ScannMyTicket | Backend Serverless (m\xEDnimo viable)"
 Globals:
   Function:
     Runtime: python3.11
@@ -34,27 +34,26 @@ Resources:
         KeySchema:
         - AttributeName: entityType
           KeyType: HASH
-        - AttributeName: sk
-          KeyType: RANGE
         Projection:
           ProjectionType: ALL
   ServerlessHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
+      StageName: Prod
       CorsConfiguration:
         AllowOrigins:
+        - http://localhost:5173
+        AllowHeaders:
         - '*'
         AllowMethods:
         - GET
         - POST
         - OPTIONS
-        AllowHeaders:
-        - '*'
   LoginUserFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: LoginUserFunction
-      Handler: auth.login_user.app.lambda_handler
+      Handler: app.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -69,11 +68,30 @@ Resources:
             Method: POST
     Metadata:
       SamResourceId: LoginUserFunction
+  RegisterUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RegisterUserFunction
+      Handler: app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TicketAppTable
+      Events:
+        ApiRegister:
+          Type: HttpApi
+          Properties:
+            ApiId:
+              Ref: ServerlessHttpApi
+            Path: /register
+            Method: POST
+    Metadata:
+      SamResourceId: RegisterUserFunction
   EventsCreateFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: EventsCreateFunction
-      Handler: events.events_create.lambda_handler
+      Handler: events_create.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -92,7 +110,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: EventsListFunction
-      Handler: events.events_list.lambda_handler
+      Handler: events_list.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -111,7 +129,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: TicketsSubscribeFunction
-      Handler: tickets.tickets_subscribe.lambda_handler
+      Handler: tickets_subscribe.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -130,7 +148,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: TicketsMineFunction
-      Handler: tickets.tickets_mine.lambda_handler
+      Handler: tickets_mine.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:

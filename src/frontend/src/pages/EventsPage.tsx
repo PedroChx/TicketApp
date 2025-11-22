@@ -1,64 +1,100 @@
-// src/pages/EventsPage.tsx
 import { useEffect, useState } from "react";
-import { listEvents, type ApiEvent } from "../api/client";
-import EventCard from "../components/EventCard";
+import { Link } from "react-router-dom";
+import { listEvents } from "../api/client";
+import type { ApiEvent } from "../api/client";
 
-export default function EventsPage() {
+function EventsPage() {
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
+    async function load() {
       try {
-        setLoading(true);
-        setError(null);
         const data = await listEvents();
         setEvents(data);
       } catch (err) {
-        console.error("Error al cargar eventos", err);
-        setError("No se pudieron cargar los eventos. Mostrando ejemplo.");
-        // Fallback visual mientras conectamos todo al 100%
-        setEvents([
-          {
-            id: "demo-1",
-            title: "Evento de ejemplo",
-            description: "Este es un evento de ejemplo para probar el frontend.",
-            location: "Querétaro, Qro.",
-            start: new Date().toISOString(),
-            end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-            image_url: "https://picsum.photos/600/320",
-          },
-        ]);
+        console.error(err);
+        setError("No se pudieron cargar los eventos.");
       } finally {
         setLoading(false);
       }
-    };
-
-    void load();
+    }
+    load();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Cargando eventos...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        {error}
+      </div>
+    );
+  }
+
   return (
-    <section className="page">
-      <header className="page-header">
-        <h1 className="page-title">Eventos disponibles</h1>
-        <p className="page-subtitle">
-          Explora los eventos y genera tus tickets digitales.
-        </p>
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
+          <h1 className="text-xl font-bold text-slate-900">Eventos</h1>
+          <div className="space-x-3 text-sm">
+            <Link
+              to="/events/create"
+              className="inline-flex items-center rounded-md bg-indigo-600 text-white px-3 py-1.5 font-semibold hover:bg-indigo-500"
+            >
+              Crear evento
+            </Link>
+            <Link
+              to="/my-tickets"
+              className="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Mis tickets
+            </Link>
+          </div>
+        </div>
       </header>
 
-      {loading && <p className="page-message">Cargando eventos…</p>}
-      {error && <p className="page-message page-message-error">{error}</p>}
-
-      <div className="cards-grid">
-        {events.map((ev) => (
-          <EventCard key={ev.id} event={ev} />
-        ))}
-
-        {!loading && events.length === 0 && (
-          <p className="page-message">No hay eventos por ahora.</p>
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        {events.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Aún no hay eventos creados. Crea uno nuevo.
+          </p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {events.map((ev) => (
+              <Link
+                key={ev.eventId}
+                to={`/events/${ev.eventId}`}
+                className="group block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-400 hover:shadow-md transition"
+              >
+                <h2 className="text-lg font-semibold text-slate-900 group-hover:text-indigo-600">
+                  {ev.title}
+                </h2>
+                {ev.location && (
+                  <p className="mt-1 text-xs text-slate-500">{ev.location}</p>
+                )}
+                {ev.start && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Inicio: {ev.start}
+                  </p>
+                )}
+                <p className="mt-2 text-sm text-slate-700 line-clamp-2">
+                  {ev.description || "Sin descripción."}
+                </p>
+              </Link>
+            ))}
+          </div>
         )}
-      </div>
-    </section>
+      </main>
+    </div>
   );
 }
+
+export default EventsPage;
