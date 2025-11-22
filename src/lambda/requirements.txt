@@ -1,0 +1,4 @@
+bcrypt
+PyJWT
+requests
+boto3

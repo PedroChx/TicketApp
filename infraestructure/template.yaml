@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: ScannMyTicket | Backend Serverless (mínimo viable)
+Description: ScannMyTicket | Backend Serverless
 
 Globals:
   Function:
@@ -44,7 +44,7 @@ Resources:
   ServerlessHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: Prod
+      StageName: $default 
       CorsConfiguration:
         AllowOrigins:
           - "http://localhost:5173"
@@ -55,12 +55,13 @@ Resources:
           - POST
           - OPTIONS
 
-  # ========= AUTH =========
+  # ========= AUTH (ESTRATEGIA MANUAL: ANY) =========
+  # Usamos ANY para asegurar que el OPTIONS llegue a la Lambda y tu código lo apruebe.
   LoginUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/auth/login_user
-      Handler: app.lambda_handler
+      CodeUri: ../src/lambda 
+      Handler: auth.login_user.app.lambda_handler 
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -70,13 +71,13 @@ Resources:
           Properties:
             ApiId: !Ref ServerlessHttpApi
             Path: /login
-            Method: POST
+            Method: ANY
 
   RegisterUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/auth/register_user
-      Handler: app.lambda_handler
+      CodeUri: ../src/lambda
+      Handler: auth.register_user.app.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -86,14 +87,16 @@ Resources:
           Properties:
             ApiId: !Ref ServerlessHttpApi
             Path: /register
-            Method: POST
+            Method: ANY
 
-  # ========= EVENTS =========
+  # ========= EVENTS (ESTRATEGIA ESTÁNDAR: MÉTODOS ESPECÍFICOS) =========
+  # Usamos POST y GET separados para evitar el error de "Duplicate method".
+  # Aquí el CORS (OPTIONS) lo responde API Gateway automáticamente.
   EventsCreateFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/events
-      Handler: events_create.lambda_handler
+      CodeUri: ../src/lambda
+      Handler: events.events_create.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -108,8 +111,8 @@ Resources:
   EventsListFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/events
-      Handler: events_list.lambda_handler
+      CodeUri: ../src/lambda
+      Handler: events.events_list.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -121,12 +124,13 @@ Resources:
             Path: /events
             Method: GET
 
-  # ========= TICKETS =========
+  # ========= TICKETS (ESTRATEGIA MANUAL: ANY) =========
+  # Rutas únicas, podemos usar ANY sin conflictos.
   TicketsSubscribeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/tickets
-      Handler: tickets_subscribe.lambda_handler
+      CodeUri: ../src/lambda
+      Handler: tickets.tickets_subscribe.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -136,13 +140,13 @@ Resources:
           Properties:
             ApiId: !Ref ServerlessHttpApi
             Path: /tickets/subscribe
-            Method: POST
+            Method: ANY
 
   TicketsMineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../src/lambda/tickets
-      Handler: tickets_mine.lambda_handler
+      CodeUri: ../src/lambda
+      Handler: tickets.tickets_mine.lambda_handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketAppTable
@@ -152,7 +156,7 @@ Resources:
           Properties:
             ApiId: !Ref ServerlessHttpApi
             Path: /tickets/mine
-            Method: GET
+            Method: ANY
 
 Outputs:
   TicketAppTableName:
