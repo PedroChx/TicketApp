@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: "ScannMyTicket | Backend Serverless (m\xEDnimo viable)"
+Description: ScannMyTicket | Backend Serverless
 Globals:
   Function:
     Runtime: python3.11
@@ -39,7 +39,7 @@ Resources:
   ServerlessHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: Prod
+      StageName: $default
       CorsConfiguration:
         AllowOrigins:
         - http://localhost:5173
@@ -53,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: LoginUserFunction
-      Handler: app.lambda_handler
+      Handler: auth.login_user.app.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -65,14 +65,14 @@ Resources:
             ApiId:
               Ref: ServerlessHttpApi
             Path: /login
-            Method: POST
+            Method: ANY
     Metadata:
       SamResourceId: LoginUserFunction
   RegisterUserFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: RegisterUserFunction
-      Handler: app.lambda_handler
+      Handler: auth.register_user.app.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -84,14 +84,14 @@ Resources:
             ApiId:
               Ref: ServerlessHttpApi
             Path: /register
-            Method: POST
+            Method: ANY
     Metadata:
       SamResourceId: RegisterUserFunction
   EventsCreateFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: EventsCreateFunction
-      Handler: events_create.lambda_handler
+      Handler: events.events_create.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -110,7 +110,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: EventsListFunction
-      Handler: events_list.lambda_handler
+      Handler: events.events_list.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -129,7 +129,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: TicketsSubscribeFunction
-      Handler: tickets_subscribe.lambda_handler
+      Handler: tickets.tickets_subscribe.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -141,14 +141,14 @@ Resources:
             ApiId:
               Ref: ServerlessHttpApi
             Path: /tickets/subscribe
-            Method: POST
+            Method: ANY
     Metadata:
       SamResourceId: TicketsSubscribeFunction
   TicketsMineFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: TicketsMineFunction
-      Handler: tickets_mine.lambda_handler
+      Handler: tickets.tickets_mine.lambda_handler
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
@@ -160,7 +160,7 @@ Resources:
             ApiId:
               Ref: ServerlessHttpApi
             Path: /tickets/mine
-            Method: GET
+            Method: ANY
     Metadata:
       SamResourceId: TicketsMineFunction
 Outputs:
